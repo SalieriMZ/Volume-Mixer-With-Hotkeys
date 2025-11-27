@@ -48,3 +48,7 @@ class HotkeyManager:
             if key in self._handlers:
                 continue
             self.assign(pid, action, hotkey, register_fn(action, pid))
+
+    def get_saved_for_process(self, process_name: str) -> Dict[str, str]:
+        all_cfg = self._cfg.load_all()
+        return all_cfg.get(process_name.lower(), {})

@@ -53,7 +53,6 @@ class AppManager:
             self._hotkeys.set_process_name(s.pid, s.process_name)
         for cb in self._listeners:
             cb(sessions)
-        live_pids = {s.pid for s in sessions}
 
     def select_pid(self, pid: Optional[int]) -> None:
         self._current_pid = pid
@@ -80,6 +79,9 @@ class AppManager:
                 return lambda: self._volume.toggle_mute(p)
             raise ValueError(act)
         self._hotkeys.ensure_for_pid(pid, process_name, register_fn)
+
+    def get_saved_hotkeys(self, process_name: str) -> dict[str, str]:
+        return self._hotkeys.get_saved_for_process(process_name)
 
     def clear_all_hotkeys(self) -> None:
         self._hotkeys.clear_all()

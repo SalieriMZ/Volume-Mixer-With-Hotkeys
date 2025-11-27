@@ -6,6 +6,9 @@ from application.app_manager import AppManager
 from domain.audio_session import AudioSession
 from i18n.translator import Translator
 
+HK_NONE_KEY = "hotkey.none"
+HK_ASSIGN_KEY = "hotkey.assign"
+
 class AppUI(tk.Tk):
     def __init__(self, manager: AppManager, translator: Translator) -> None:
         super().__init__()
@@ -57,22 +60,22 @@ class AppUI(tk.Tk):
         bottom = ttk.LabelFrame(self, text=self._t.t("label.selection.none"))
         bottom.pack(fill=tk.X, padx=10, pady=5)
         self.sel_label_frame = bottom
-        self.sel_label = bottom  # reuse for title text
+        self.sel_label = bottom
 
-        self.up_var = tk.StringVar(value=self._t.t("hotkey.none"))
-        self.down_var = tk.StringVar(value=self._t.t("hotkey.none"))
-        self.mute_var = tk.StringVar(value=self._t.t("hotkey.none"))
+        self.up_var = tk.StringVar(value=self._t.t(HK_NONE_KEY))
+        self.down_var = tk.StringVar(value=self._t.t(HK_NONE_KEY))
+        self.mute_var = tk.StringVar(value=self._t.t(HK_NONE_KEY))
 
         ttk.Label(bottom, text=f"{self._t.t('hotkey.up')}:" ).grid(row=0, column=0, sticky="e", padx=6, pady=6)
-        ttk.Button(bottom, text=self._t.t("hotkey.assign"), command=lambda: self._capture_hotkey('up')).grid(row=0, column=1, sticky="w", padx=6, pady=6)
+        ttk.Button(bottom, text=self._t.t(HK_ASSIGN_KEY), command=lambda: self._capture_hotkey('up')).grid(row=0, column=1, sticky="w", padx=6, pady=6)
         ttk.Label(bottom, textvariable=self.up_var, foreground="#555").grid(row=0, column=2, sticky="w", padx=6)
 
         ttk.Label(bottom, text=f"{self._t.t('hotkey.down')}:" ).grid(row=1, column=0, sticky="e", padx=6, pady=6)
-        ttk.Button(bottom, text=self._t.t("hotkey.assign"), command=lambda: self._capture_hotkey('down')).grid(row=1, column=1, sticky="w", padx=6, pady=6)
+        ttk.Button(bottom, text=self._t.t(HK_ASSIGN_KEY), command=lambda: self._capture_hotkey('down')).grid(row=1, column=1, sticky="w", padx=6, pady=6)
         ttk.Label(bottom, textvariable=self.down_var, foreground="#555").grid(row=1, column=2, sticky="w", padx=6)
 
         ttk.Label(bottom, text=f"{self._t.t('hotkey.mute')}:" ).grid(row=2, column=0, sticky="e", padx=6, pady=6)
-        ttk.Button(bottom, text=self._t.t("hotkey.assign"), command=lambda: self._capture_hotkey('mute')).grid(row=2, column=1, sticky="w", padx=6, pady=6)
+        ttk.Button(bottom, text=self._t.t(HK_ASSIGN_KEY), command=lambda: self._capture_hotkey('mute')).grid(row=2, column=1, sticky="w", padx=6, pady=6)
         ttk.Label(bottom, textvariable=self.mute_var, foreground="#555").grid(row=2, column=2, sticky="w", padx=6)
 
         ttk.Button(bottom, text=self._t.t("hotkey.clear"), command=self._clear_hotkeys).grid(row=3, column=0, padx=6, pady=10)
@@ -95,7 +98,7 @@ class AppUI(tk.Tk):
             else:
                 self.tree.insert('', tk.END, iid=iid, values=vals)
             self._m.ensure_bindings(s.pid, s.process_name)
-        for iid in list(self.tree.get_children()):
+        for iid in self.tree.get_children():
             if iid not in seen:
                 self.tree.delete(iid)
         if prev_key:
@@ -110,9 +113,9 @@ class AppUI(tk.Tk):
         self._current_selection_pid = None
         self._current_selection_key = None
         self.sel_label_frame.configure(text=self._t.t("label.selection.none"))
-        self.up_var.set(self._t.t("hotkey.none"))
-        self.down_var.set(self._t.t("hotkey.none"))
-        self.mute_var.set(self._t.t("hotkey.none"))
+        self.up_var.set(self._t.t(HK_NONE_KEY))
+        self.down_var.set(self._t.t(HK_NONE_KEY))
+        self.mute_var.set(self._t.t(HK_NONE_KEY))
 
     def _on_select(self, _evt=None) -> None:
         sel = self.tree.selection()
@@ -128,15 +131,19 @@ class AppUI(tk.Tk):
         self._current_selection_pid = pid
         self._current_selection_key = (pid, device)
         self.sel_label_frame.configure(text=self._t.t("label.selection", name=name, pid=pid))
+        saved = self._m.get_saved_hotkeys(name)
+        self.up_var.set(saved.get('up', self._t.t(HK_NONE_KEY)))
+        self.down_var.set(saved.get('down', self._t.t(HK_NONE_KEY)))
+        self.mute_var.set(saved.get('mute', self._t.t(HK_NONE_KEY)))
 
     def _capture_hotkey(self, action: str) -> None:
         if self._current_selection_pid is None:
-            messagebox.showinfo(self._t.t("hotkey.assign"), self._t.t("error.select.first"))
+            messagebox.showinfo(self._t.t(HK_ASSIGN_KEY), self._t.t("error.select.first"))
             return
         try:
             import keyboard
         except Exception:
-            messagebox.showerror(self._t.t("hotkey.assign"), self._t.t("error.keyboard.missing"))
+            messagebox.showerror(self._t.t(HK_ASSIGN_KEY), self._t.t("error.keyboard.missing"))
             return
         pid = self._current_selection_pid
         cap = tk.Toplevel(self)
@@ -175,9 +182,9 @@ class AppUI(tk.Tk):
 
     def _clear_hotkeys(self) -> None:
         self._m.clear_all_hotkeys()
-        self.up_var.set(self._t.t("hotkey.none"))
-        self.down_var.set(self._t.t("hotkey.none"))
-        self.mute_var.set(self._t.t("hotkey.none"))
+        self.up_var.set(self._t.t(HK_NONE_KEY))
+        self.down_var.set(self._t.t(HK_NONE_KEY))
+        self.mute_var.set(self._t.t(HK_NONE_KEY))
 
     def _on_close(self) -> None:
         self._m.stop()
